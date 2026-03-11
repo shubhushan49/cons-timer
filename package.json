@@ -1,0 +1,49 @@
+{
+  "name": "movetimer",
+  "version": "1.0.0",
+  "description": "Gentle reminders to stretch and walk",
+  "author": "Pomodoro Flex <pomodoroflex@example.com>",
+  "homepage": "https://github.com/movetimer/movetimer",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && ELECTRON_START_URL=http://localhost:5173 electron --no-sandbox .\"",
+    "build": "vite build && electron-builder",
+    "build:dir": "vite build && electron-builder --dir"
+  },
+  "dependencies": {
+    "lucide-react": "^0.460.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-router-dom": "^7.1.0",
+    "sql.js": "^1.11.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.10",
+    "@types/react-dom": "~19.1.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.9.2",
+    "vite": "^6.0.3",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.pomodoroflex.app",
+    "productName": "Pomodoro Flex",
+    "directories": { "output": "release", "buildResources": "assets" },
+    "files": ["dist/**", "electron/**", "assets/**", "public/**"],
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Utility",
+      "maintainer": "Pomodoro Flex <pomodoroflex@example.com>",
+      "icon": "assets/icon-256.png",
+      "desktop": { "Name": "Pomodoro Flex", "StartupWMClass": "pomodoro-flex" }
+    },
+    "mac": { "target": ["dmg"], "category": "public.app-category.healthcare-fitness" },
+    "win": { "target": ["nsis"] }
+  },
+  "private": true
+}
