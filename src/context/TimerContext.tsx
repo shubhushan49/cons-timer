@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { RunState, TimerEngineState } from '../services/timerEngine';
 import * as TimerEngine from '../services/timerEngine';
 import { getSequenceById, getTimersBySequenceId } from '../db/sequences';
@@ -70,15 +70,18 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     }).electronAPI;
 
     const toTrayState = (runs: RunState[]) => {
-      const first = runs.find((r) => r.status === 'running');
-      const run = first ?? runs[0];
-      const current = run?.timers[run.currentTimerIndex];
       return {
-        status: run?.status ?? 'idle',
-        label: current?.label ?? '',
-        type: current?.type ?? 'work',
-        remainingSeconds: run?.remainingSeconds ?? 0,
-        sequenceName: run?.sequence?.name ?? '',
+        runs: runs.map((run) => {
+          const current = run?.timers[run.currentTimerIndex];
+          return {
+            status: run.status,
+            label: current?.label ?? '',
+            type: current?.type ?? 'work',
+            remainingSeconds: run.remainingSeconds,
+            sequenceName: run.sequence?.name ?? '',
+            sequenceId: run.sequence?.id ?? null,
+          };
+        }),
       };
     };
 
@@ -88,16 +91,18 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       let lastRunsCount = 0;
       let lastSendAt = 0;
       const TRAY_UPDATE_INTERVAL_MS = 60_000;
+      const TRAY_UPDATE_WHEN_RUNNING_MS = 1000;
 
       const unsub = TimerEngine.subscribe((state) => {
         setEngineState(state);
         if (!api.sendTrayState) return;
         const now = Date.now();
         const runsChanged = state.runs.length !== lastRunsCount;
-        const stale =
-          state.runs.length > 0 &&
-          now - lastSendAt >= TRAY_UPDATE_INTERVAL_MS;
-        if (runsChanged || stale) {
+        const hasActiveRuns = state.runs.length > 0;
+        const stale = hasActiveRuns && now - lastSendAt >= TRAY_UPDATE_INTERVAL_MS;
+        const runningSync =
+          hasActiveRuns && now - lastSendAt >= TRAY_UPDATE_WHEN_RUNNING_MS;
+        if (runsChanged || stale || runningSync) {
           lastRunsCount = state.runs.length;
           lastSendAt = now;
           api.sendTrayState(toTrayState(state.runs));

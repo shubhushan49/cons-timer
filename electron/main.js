@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, Tray, Menu, Notification: ElectronNotification, nativeImage } = require('electron');
+const { createPanel, getPanelRef, destroyPanel } = require('./panel');
 const path = require('path');
 const fs = require('fs');
 
@@ -7,7 +8,7 @@ app.setName('Pomodoro Flex');
 let mainWindow = null;
 let tray = null;
 let isQuitting = false;
-let trayTimerState = { status: 'idle', label: '', type: 'work', remainingSeconds: 0, sequenceName: '' };
+let trayTimerState = { runs: [] };
 let db = null;
 let dbInitPromise = null;
 
@@ -91,24 +92,8 @@ function saveDb() {
   }
 }
 
-function formatRemaining(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}m ${s}s`;
-}
-
 function buildTrayMenu() {
-  const { status, label, remainingSeconds, sequenceName } = trayTimerState;
-  let statusLabel = 'No timer running';
-  if (status === 'running' || status === 'paused' || status === 'snoozed') {
-    const time = formatRemaining(remainingSeconds);
-    const prefix = status === 'paused' ? 'Paused – ' : status === 'snoozed' ? 'Snoozed – ' : '';
-    statusLabel = `${prefix}${label || 'Timer'}: ${time}`;
-    if (sequenceName) statusLabel += ` (${sequenceName})`;
-  }
   return Menu.buildFromTemplate([
-    { label: statusLabel, enabled: false },
-    { type: 'separator' },
     { label: 'Show', click: () => mainWindow?.show() },
     { type: 'separator' },
     { label: 'Quit', click: () => { isQuitting = true; app.quit(); } },
@@ -138,6 +123,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      backgroundThrottling: false,
     },
     icon: path.join(__dirname, '../assets/icon-256.png'),
     show: false,
@@ -162,6 +148,7 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+    destroyPanel();
     if (tray) tray.destroy();
     tray = null;
     if (db) {
@@ -172,24 +159,65 @@ function createWindow() {
   });
 
   createTray();
+  createPanel(() => mainWindow, initDb, () => trayTimerState);
 }
 
 function applyTrayState(state, popMenu = false) {
   trayTimerState = {
-    status: state.status || 'idle',
-    label: state.label || '',
-    type: state.type || 'work',
-    remainingSeconds: state.remainingSeconds ?? 0,
-    sequenceName: state.sequenceName || '',
+    runs: Array.isArray(state?.runs) ? state.runs : (state?.sequenceId != null ? [{
+      status: state.status || 'idle',
+      label: state.label || '',
+      remainingSeconds: state.remainingSeconds ?? 0,
+      sequenceName: state.sequenceName || '',
+      sequenceId: state.sequenceId ?? null,
+    }] : []),
   };
   if (tray) {
     tray.setContextMenu(buildTrayMenu());
     if (popMenu) tray.popUpContextMenu();
   }
+  const panel = getPanelRef();
+  if (panel?.webContents && !panel.webContents.isDestroyed()) {
+    panel.webContents.send('panel:timer-state', trayTimerState);
+  }
 }
 
 ipcMain.on('tray:state-response', (_, state) => applyTrayState(state, true));
 ipcMain.on('tray:state', (_, state) => applyTrayState(state, false));
+
+// IPC: panel requests to open main window at sequence editor
+ipcMain.on('panel:show-sequence-editor', (_, sequenceId) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show();
+    mainWindow.webContents.send('app:navigate-to', `/sequence/${sequenceId}`);
+  }
+});
+
+// IPC: panel timer actions (forward to main window renderer)
+ipcMain.on('panel:timer-pause', (_, sequenceId) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show();
+    mainWindow.webContents.send('app:timer-pause', sequenceId);
+  }
+});
+ipcMain.on('panel:timer-snooze', (_, sequenceId) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show();
+    mainWindow.webContents.send('app:timer-snooze', sequenceId);
+  }
+});
+ipcMain.on('panel:timer-stop', (_, sequenceId) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show();
+    mainWindow.webContents.send('app:timer-stop', sequenceId);
+  }
+});
+ipcMain.on('panel:timer-resume', (_, sequenceId) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show();
+    mainWindow.webContents.send('app:timer-resume', sequenceId);
+  }
+});
 
 // IPC: show notification from main process (reliable when app is backgrounded)
 ipcMain.handle('show-notification', (_, { title, body }) => {

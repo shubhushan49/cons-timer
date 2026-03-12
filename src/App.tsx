@@ -1,6 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { TimerProvider } from './context/TimerContext';
 import { ThemeProvider } from './context/ThemeContext';
+import IpcNavigationListener from './components/IpcNavigationListener';
+import IpcTimerActionListener from './components/IpcTimerActionListener';
 import SplashPage from './pages/SplashPage';
 import OnboardingPage from './pages/OnboardingPage';
 import DashboardPage from './pages/DashboardPage';
@@ -14,6 +16,8 @@ export default function App() {
     <ThemeProvider>
       <BrowserRouter>
         <TimerProvider>
+          <IpcNavigationListener />
+          <IpcTimerActionListener />
           <Routes>
             <Route path="/" element={<SplashPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />

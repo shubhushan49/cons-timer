@@ -33,11 +33,14 @@ async function main() {
   for (const size of sizes) {
     const out = path.join(iconsDir, `${size}x${size}.png`);
     await sharp(src).resize(size, size).toFile(out);
+    fs.chmodSync(out, 0o644);
     console.log(`Created ${out}`);
   }
 
   // Also copy as build/icon.png for electron-builder default
-  await sharp(src).toFile(path.join(buildDir, 'icon.png'));
+  const iconPng = path.join(buildDir, 'icon.png');
+  await sharp(src).toFile(iconPng);
+  fs.chmodSync(iconPng, 0o644);
   console.log('Created build/icon.png');
   console.log('Done.');
 }

@@ -41,9 +41,9 @@
       "target": ["AppImage", "deb"],
       "category": "Utility",
       "maintainer": "Pomodoro Flex <pomodoroflex@example.com>",
-      "icon": "build/icon.png",
+      "icon": "build/icons",
       "executableArgs": ["--no-sandbox"],
-      "desktop": { "Name": "Pomodoro Flex", "StartupWMClass": "pomodoro-flex" }
+      "desktop": { "Name": "Pomodoro Flex", "Icon": "pomodoroflex", "StartupWMClass": "Pomodoro Flex" }
     },
     "mac": { "target": ["dmg"], "category": "public.app-category.healthcare-fitness" },
     "win": { "target": ["nsis"] }
