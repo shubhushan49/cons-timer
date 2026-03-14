@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTimer } from '../context/TimerContext';
 import { useTheme } from '../context/ThemeContext';
-import { getSequences, getTimersBySequenceId, setSequenceEnabled } from '../db/sequences';
+import { getSequences, getTimersBySequenceId, setSequenceEnabled, deleteSequence } from '../db/sequences';
 import {
   scheduleStartTimeNotification,
   cancelStartTimeNotification,
 } from '../services/notifications';
+import { clearAutoStarted } from '../services/scheduler';
 import type { SequenceRow } from '../db/schema';
+import { Trash2 } from 'lucide-react';
 
 function formatTime24(mins: number): string {
   const h = Math.floor(mins / 60);
@@ -58,6 +60,21 @@ export default function SequencesPage() {
 
   const runningSequenceIds = new Set(timer.runs.map((r) => r.sequence.id));
 
+  const handleDelete = useCallback(
+    async (e: React.MouseEvent, seq: SequenceRow) => {
+      e.stopPropagation();
+      if (!confirm('Delete this sequence?')) return;
+      if (timer.runs.some((r) => r.sequence.id === seq.id)) {
+        timer.stop(seq.id);
+      }
+      await cancelStartTimeNotification(seq.id);
+      clearAutoStarted(seq.id);
+      await deleteSequence(seq.id);
+      load();
+    },
+    [timer, load]
+  );
+
   return (
     <div
       className={`p-5 min-h-full ${
@@ -98,7 +115,7 @@ export default function SequencesPage() {
                   {formatTime24(seq.start_time)} – {formatTime24(seq.end_time)}
                 </p>
               )}
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex gap-2 items-center">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -122,6 +139,13 @@ export default function SequencesPage() {
                   }`}
                 >
                   {(seq.enabled ?? 1) === 1 ? 'Disable' : 'Enable'}
+                </button>
+                <button
+                  onClick={(e) => handleDelete(e, seq)}
+                  className="ml-auto p-2 rounded-lg text-red-500 dark:text-red-400 bg-red-500/15 dark:bg-red-500/20 hover:bg-red-500/25 dark:hover:bg-red-500/30"
+                  aria-label="Delete sequence"
+                >
+                  <Trash2 className="size-4" />
                 </button>
               </div>
             </div>

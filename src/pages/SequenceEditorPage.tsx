@@ -5,6 +5,7 @@ import {
   getTimersBySequenceId,
   createSequence,
   updateSequence,
+  deleteSequence,
   createTimer,
   updateTimer,
   deleteTimer,
@@ -14,6 +15,7 @@ import type { SequenceRow, TimerRow, LoopType } from '../db/schema';
 import { SequenceEditorRow } from '../components/SequenceEditorRow';
 import { TimerPickerModal } from '../components/TimerPickerModal';
 import { useTheme } from '../context/ThemeContext';
+import { useTimer } from '../context/TimerContext';
 import { clearAutoStarted } from '../services/scheduler';
 import {
   scheduleStartTimeNotification,
@@ -38,6 +40,7 @@ export default function SequenceEditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const theme = useTheme();
+  const timer = useTimer();
   const isDark = theme.resolved === 'dark';
   const isNew = id === 'new';
 
@@ -235,6 +238,20 @@ export default function SequenceEditorPage() {
     }
   }, [isNew, id, name, loopType, dailyLimit, startTime, endTime, soundId, timers, navigate]);
 
+  const handleDelete = useCallback(async () => {
+    if (isNew) return;
+    if (!confirm('Delete this sequence?')) return;
+    const numId = parseInt(id!, 10);
+    if (isNaN(numId)) return;
+    if (timer.runs.some((r) => r.sequence.id === numId)) {
+      timer.stop(numId);
+    }
+    await cancelStartTimeNotification(numId);
+    clearAutoStarted(numId);
+    await deleteSequence(numId);
+    navigate('/sequences', { replace: true });
+  }, [isNew, id, timer, navigate]);
+
   if (loading && !isNew) {
     return (
       <div
@@ -426,6 +443,15 @@ export default function SequenceEditorPage() {
           isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-100 border-slate-200'
         }`}
       >
+        {!isNew && (
+          <button
+            onClick={handleDelete}
+            disabled={loading}
+            className="w-full py-3 mb-3 text-red-500 dark:text-red-400 font-semibold text-base disabled:opacity-40 hover:bg-red-500/10 dark:hover:bg-red-400/10 rounded-xl"
+          >
+            Delete sequence
+          </button>
+        )}
         <button
           onClick={save}
           disabled={loading}
