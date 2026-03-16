@@ -1,4 +1,4 @@
-name: Release deb package
+name: Release Windows portable package
 
 on:
   workflow_dispatch:
@@ -13,8 +13,8 @@ on:
         type: string
 
 jobs:
-  release-deb:
-    runs-on: ubuntu-latest
+  release-windows:
+    runs-on: windows-latest
     permissions:
       contents: write
     steps:
@@ -32,8 +32,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build deb package
-        run: npm run icons && npx vite build && npx electron-builder --linux deb
+      - name: Build Windows portable package
+        run: npm run icons && npx vite build && npx electron-builder --win portable
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -42,7 +42,7 @@ jobs:
         with:
           tag_name: ${{ github.event.inputs.tag || inputs.tag }}
           name: Release ${{ github.event.inputs.tag || inputs.tag }}
-          files: release/*.deb
+          files: release/*.exe
           generate_release_notes: true
           draft: false
         env:

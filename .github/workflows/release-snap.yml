@@ -1,4 +1,4 @@
-name: Release deb package
+name: Release snap package
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ on:
         type: string
 
 jobs:
-  release-deb:
+  release-snap:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -29,20 +29,28 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Install snapcraft
+        run: sudo snap install snapcraft --classic
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Build deb package
-        run: npm run icons && npx vite build && npx electron-builder --linux deb
+      - name: Build snap package
+        run: npm run icons && npx vite build && npx electron-builder --linux snap
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Release
+      - name: Publish to Snap Store
+        run: snapcraft upload --release=stable release/*.snap
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag || inputs.tag }}
           name: Release ${{ github.event.inputs.tag || inputs.tag }}
-          files: release/*.deb
+          files: release/*.snap
           generate_release_notes: true
           draft: false
         env:

@@ -1,0 +1,43 @@
+name: Release all packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.0.0)'
+        required: true
+
+jobs:
+  release-deb:
+    uses: ./.github/workflows/release-deb.yml
+    with:
+      tag: ${{ github.event.inputs.tag }}
+    secrets: inherit
+
+  release-snap:
+    uses: ./.github/workflows/release-snap.yml
+    with:
+      tag: ${{ github.event.inputs.tag }}
+    needs: release-deb
+    secrets: inherit
+
+  release-appimage:
+    uses: ./.github/workflows/release-appimage.yml
+    with:
+      tag: ${{ github.event.inputs.tag }}
+    needs: release-snap
+    secrets: inherit
+
+  release-dmg:
+    uses: ./.github/workflows/release-dmg.yml
+    with:
+      tag: ${{ github.event.inputs.tag }}
+    needs: release-appimage
+    secrets: inherit
+
+  release-windows:
+    uses: ./.github/workflows/release-windows.yml
+    with:
+      tag: ${{ github.event.inputs.tag }}
+    needs: release-dmg
+    secrets: inherit

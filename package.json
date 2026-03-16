@@ -9,7 +9,8 @@
     "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && ELECTRON_START_URL=http://localhost:5173 electron --no-sandbox .\"",
     "icons": "node scripts/prepare-icons.js",
     "build": "npm run icons && vite build && electron-builder",
-    "build:dir": "npm run icons && vite build && electron-builder --dir"
+    "build:dir": "npm run icons && vite build && electron-builder --dir",
+    "build:snap": "npm run icons && vite build && electron-builder --linux snap"
   },
   "dependencies": {
     "lucide-react": "^0.460.0",
@@ -38,15 +39,27 @@
     "directories": { "output": "release", "buildResources": "build" },
     "files": ["dist/**", "electron/**", "assets/**", "public/**"],
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": ["AppImage", "deb", "snap"],
       "category": "Utility",
       "maintainer": "Pomodoro Flex <pomodoroflex@example.com>",
       "icon": "build/icons",
       "executableArgs": ["--no-sandbox"],
       "desktop": { "Name": "Pomodoro Flex", "Icon": "pomodoroflex", "StartupWMClass": "Pomodoro Flex" }
     },
+    "snap": {
+      "confinement": "strict",
+      "grade": "stable",
+      "plugs": [
+        "default",
+        "audio-playback",
+        "browser-support",
+        "network",
+        "network-bind"
+      ],
+      "summary": "Gentle reminders to stretch and walk"
+    },
     "mac": { "target": ["dmg"], "category": "public.app-category.healthcare-fitness" },
-    "win": { "target": ["nsis"] }
+    "win": { "target": ["portable"] }
   },
   "private": true
 }

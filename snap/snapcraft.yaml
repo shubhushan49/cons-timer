@@ -1,0 +1,62 @@
+name: pomodoroflex
+base: core22
+version: '1.0.0'
+summary: Gentle reminders to stretch and walk
+description: |
+  Pomodoro Flex is a desktop timer app for work/break sequences with scheduling.
+  Set work and break timers, define schedules, and get gentle reminders to stretch
+  and walk throughout your day.
+
+grade: stable
+confinement: strict
+
+icon: ../assets/icon-256.png
+
+apps:
+  pomodoroflex:
+    command: pomodoroflex/PomodoroFlex --no-sandbox
+    desktop: pomodoroflex/com.pomodoroflex.app.desktop
+    extensions: [gnome]
+    plugs:
+      - default
+      - audio-playback
+      - browser-support
+      - network
+      - network-bind
+    environment:
+      TMPDIR: $XDG_RUNTIME_DIR
+
+parts:
+  pomodoroflex:
+    plugin: nil
+    source: .
+    override-build: |
+      npm ci
+      npm run icons
+      npx vite build
+      npx electron-builder --linux dir
+      mkdir -p "$SNAPCRAFT_PART_INSTALL/pomodoroflex"
+      cp -a release/linux-unpacked/* "$SNAPCRAFT_PART_INSTALL/pomodoroflex/"
+      # Remove chrome-sandbox; not needed in strict confinement
+      rm -f "$SNAPCRAFT_PART_INSTALL/pomodoroflex/chrome-sandbox"
+    build-snaps:
+      - node/20/stable
+    build-packages:
+      - unzip
+    stage-packages:
+      - libnss3
+      - libnspr4
+      - libatk1.0-0
+      - libatk-bridge2.0-0
+      - libcups2
+      - libdrm2
+      - libxkbcommon0
+      - libxcomposite1
+      - libxdamage1
+      - libxfixes3
+      - libxrandr2
+      - libgbm1
+      - libasound2
+      - libpango-1.0-0
+      - libcairo2
+      - libxshmfence1

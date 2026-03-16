@@ -1,4 +1,4 @@
-name: Release deb package
+name: Release DMG package
 
 on:
   workflow_dispatch:
@@ -13,8 +13,8 @@ on:
         type: string
 
 jobs:
-  release-deb:
-    runs-on: ubuntu-latest
+  release-dmg:
+    runs-on: macos-latest
     permissions:
       contents: write
     steps:
@@ -32,8 +32,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build deb package
-        run: npm run icons && npx vite build && npx electron-builder --linux deb
+      - name: Build DMG package
+        run: npm run icons && npx vite build && npx electron-builder --mac dmg
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -42,7 +42,7 @@ jobs:
         with:
           tag_name: ${{ github.event.inputs.tag || inputs.tag }}
           name: Release ${{ github.event.inputs.tag || inputs.tag }}
-          files: release/*.deb
+          files: release/*.dmg
           generate_release_notes: true
           draft: false
         env:
