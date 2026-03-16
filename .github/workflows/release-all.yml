@@ -12,6 +12,8 @@ jobs:
     uses: ./.github/workflows/release-deb.yml
     with:
       tag: ${{ github.event.inputs.tag }}
+    permissions:
+      contents: write
     secrets: inherit
 
   release-snap:
@@ -19,6 +21,8 @@ jobs:
     with:
       tag: ${{ github.event.inputs.tag }}
     needs: release-deb
+    permissions:
+      contents: write
     secrets: inherit
 
   release-appimage:
@@ -26,6 +30,8 @@ jobs:
     with:
       tag: ${{ github.event.inputs.tag }}
     needs: release-snap
+    permissions:
+      contents: write
     secrets: inherit
 
   release-dmg:
@@ -33,6 +39,8 @@ jobs:
     with:
       tag: ${{ github.event.inputs.tag }}
     needs: release-appimage
+    permissions:
+      contents: write
     secrets: inherit
 
   release-windows:
@@ -40,4 +48,6 @@ jobs:
     with:
       tag: ${{ github.event.inputs.tag }}
     needs: release-dmg
+    permissions:
+      contents: write
     secrets: inherit
