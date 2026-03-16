@@ -49,13 +49,7 @@
     "snap": {
       "confinement": "strict",
       "grade": "stable",
-      "plugs": [
-        "default",
-        "audio-playback",
-        "browser-support",
-        "network",
-        "network-bind"
-      ],
+      "plugs": ["default", "network-bind"],
       "summary": "Gentle reminders to stretch and walk"
     },
     "mac": { "target": ["dmg"], "category": "public.app-category.healthcare-fitness" },

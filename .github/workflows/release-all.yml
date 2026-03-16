@@ -8,19 +8,19 @@ on:
         required: true
 
 jobs:
-  release-deb:
-    uses: ./.github/workflows/release-deb.yml
+  release-snap:
+    uses: ./.github/workflows/release-snap.yml
     with:
       tag: ${{ github.event.inputs.tag }}
     permissions:
       contents: write
     secrets: inherit
 
-  release-snap:
-    uses: ./.github/workflows/release-snap.yml
+  release-deb:
+    uses: ./.github/workflows/release-deb.yml
     with:
       tag: ${{ github.event.inputs.tag }}
-    needs: release-deb
+    needs: release-snap
     permissions:
       contents: write
     secrets: inherit
@@ -29,7 +29,7 @@ jobs:
     uses: ./.github/workflows/release-appimage.yml
     with:
       tag: ${{ github.event.inputs.tag }}
-    needs: release-snap
+    needs: release-deb
     permissions:
       contents: write
     secrets: inherit
