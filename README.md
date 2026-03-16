@@ -19,6 +19,18 @@ npm run build
 
 Outputs go to `release/` (AppImage/deb on Linux, exe/nsis on Windows, dmg on macOS).
 
+### macOS DMG: "App is damaged" or "can't be opened"
+
+The app is not code-signed, so macOS Gatekeeper may block it with a "damaged" or "can't be opened" message. Remove the quarantine attribute and try again:
+
+```bash
+xattr -cr /Applications/PomodoroFlex.app
+```
+
+(If the app is elsewhere, use its path instead, e.g. `xattr -cr ~/Downloads/PomodoroFlex.app`.)
+
+Alternatively: right‑click the app → **Open** → confirm "Open" in the dialog.
+
 For a quicker unpacked build (no installers):
 
 ```bash

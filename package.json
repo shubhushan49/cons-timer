@@ -50,7 +50,12 @@
       "confinement": "strict",
       "grade": "stable",
       "plugs": ["default", "network-bind"],
-      "summary": "Gentle reminders to stretch and walk"
+      "summary": "Gentle reminders to stretch and walk",
+      "desktop": {
+        "Name": "Pomodoro Flex",
+        "Icon": "${SNAP}/meta/gui/icon.png",
+        "StartupWMClass": "Pomodoro Flex"
+      }
     },
     "mac": { "target": ["dmg"], "category": "public.app-category.healthcare-fitness" },
     "win": { "target": ["portable"] }
