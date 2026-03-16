@@ -8,7 +8,42 @@ on:
         required: true
 
 jobs:
+  check-release:
+    runs-on: ubuntu-latest
+    outputs:
+      has_deb: ${{ steps.check.outputs.has_deb }}
+      has_snap: ${{ steps.check.outputs.has_snap }}
+      has_appimage: ${{ steps.check.outputs.has_appimage }}
+      has_dmg: ${{ steps.check.outputs.has_dmg }}
+      has_exe: ${{ steps.check.outputs.has_exe }}
+    steps:
+      - name: Check which package types exist in release
+        id: check
+        run: |
+          resp=$(curl -s -w "\n%{http_code}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.event.inputs.tag }}")
+          http_code=$(echo "$resp" | tail -n1)
+          body=$(echo "$resp" | sed '$d')
+          if [ "$http_code" != "200" ]; then
+            echo "has_deb=false" >> $GITHUB_OUTPUT
+            echo "has_snap=false" >> $GITHUB_OUTPUT
+            echo "has_appimage=false" >> $GITHUB_OUTPUT
+            echo "has_dmg=false" >> $GITHUB_OUTPUT
+            echo "has_exe=false" >> $GITHUB_OUTPUT
+            echo "Release ${{ github.event.inputs.tag }} does not exist, proceeding with all builds"
+            exit 0
+          fi
+          assets=$(echo "$body" | jq -r '[.assets[].name] | join(" ")')
+          echo "$assets" | grep -qE '\.deb$' && echo "has_deb=true" >> $GITHUB_OUTPUT || echo "has_deb=false" >> $GITHUB_OUTPUT
+          echo "$assets" | grep -qE '\.snap$' && echo "has_snap=true" >> $GITHUB_OUTPUT || echo "has_snap=false" >> $GITHUB_OUTPUT
+          echo "$assets" | grep -qiE '\.AppImage$' && echo "has_appimage=true" >> $GITHUB_OUTPUT || echo "has_appimage=false" >> $GITHUB_OUTPUT
+          echo "$assets" | grep -qE '\.dmg$' && echo "has_dmg=true" >> $GITHUB_OUTPUT || echo "has_dmg=false" >> $GITHUB_OUTPUT
+          echo "$assets" | grep -qE '\.exe$' && echo "has_exe=true" >> $GITHUB_OUTPUT || echo "has_exe=false" >> $GITHUB_OUTPUT
+          echo "Checked release ${{ github.event.inputs.tag }} - missing assets will be built"
+
   release-snap:
+    needs: check-release
+    if: needs['check-release'].outputs.has_snap != 'true'
     uses: ./.github/workflows/release-snap.yml
     with:
       tag: ${{ github.event.inputs.tag }}
@@ -17,37 +52,41 @@ jobs:
     secrets: inherit
 
   release-deb:
+    needs: check-release
+    if: needs['check-release'].outputs.has_deb != 'true'
     uses: ./.github/workflows/release-deb.yml
     with:
       tag: ${{ github.event.inputs.tag }}
-    needs: release-snap
     permissions:
       contents: write
     secrets: inherit
 
   release-appimage:
+    needs: check-release
+    if: needs['check-release'].outputs.has_appimage != 'true'
     uses: ./.github/workflows/release-appimage.yml
     with:
       tag: ${{ github.event.inputs.tag }}
-    needs: release-deb
     permissions:
       contents: write
     secrets: inherit
 
   release-dmg:
+    needs: check-release
+    if: needs['check-release'].outputs.has_dmg != 'true'
     uses: ./.github/workflows/release-dmg.yml
     with:
       tag: ${{ github.event.inputs.tag }}
-    needs: release-appimage
     permissions:
       contents: write
     secrets: inherit
 
   release-windows:
+    needs: check-release
+    if: needs['check-release'].outputs.has_exe != 'true'
     uses: ./.github/workflows/release-windows.yml
     with:
       tag: ${{ github.event.inputs.tag }}
-    needs: release-dmg
     permissions:
       contents: write
     secrets: inherit
